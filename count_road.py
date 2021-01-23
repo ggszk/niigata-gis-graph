@@ -114,7 +114,7 @@ def get_intersection_of_roads(r0, r1) :
 
 # 道路ファイルから交点ファイルを作る
 # JSONに出力する都合でタプルをリストにしている
-def get_intersections(file) :
+def get_intersections(file, out_file) :
     # 道路ファイルを読む
     roads = read_roads(file)
 
@@ -122,31 +122,32 @@ def get_intersections(file) :
 
     # 交点を求める
     limit = 100 # 道の数：デバッグ用
-    i = 0
-    for r0 in roads:
-        if i == limit :
-            break
-        j = 0
-        intersections = []
-        for r1 in roads:
-            if j == limit :
+    with open(out_file, "w") as o_f:
+        i = 0
+        for r0 in roads:
+            if i == limit :
                 break
-            # 同じ道の間の交点は求めない→交点はr0とr1入れ替えて2回計算されている
-            if i != j :
-                p = get_intersection_of_roads(r0, r1)
-                # 交点があったら出力
-                if len(p) > 0 :
-                    intersections.append([j, p])
-            j = j + 1
-        print(json.dumps(intersections))
-        i = i + 1
+            j = 0
+            intersections = []
+            for r1 in roads:
+                if j == limit :
+                    break
+                # 同じ道の間の交点は求めない→交点はr0とr1入れ替えて2回計算されている
+                if i != j :
+                    p = get_intersection_of_roads(r0, r1)
+                    # 交点があったら出力
+                    if len(p) > 0 :
+                        intersections.append([j, p])
+                j = j + 1
+            o_f.write(json.dumps(intersections) + "\n")
+            i = i + 1
 
     print(datetime.datetime.now())
 
 # ここからデータの作成
 
 # 入力となるKMLファイル
-kml_files = ["./data/od_gis_10121_kokudo.kml", "./data/od_gis_10122_kendo.kml", "./data/od_gis_10123_shido.kml"]
+kml_files = ["./input/od_gis_10121_kokudo.kml", "./input/od_gis_10122_kendo.kml", "./input/od_gis_10123_shido.kml"]
 
 # 中間生成ファイルの置き場
 temp_dir = "./result_temp/"
@@ -158,4 +159,4 @@ create_roads_file(kml_files, temp_dir + "roads.txt")
 remove_duplicate_points(temp_dir + "roads.txt", temp_dir + "roads2.txt")
 
 # 道路ファイルから交点ファイルを作る
-get_intersections(temp_dir + "roads2.txt")
+get_intersections(temp_dir + "roads2.txt", temp_dir + "intersectons.txt")
