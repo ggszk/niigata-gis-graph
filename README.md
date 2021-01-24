@@ -31,8 +31,12 @@
 
 ## 利用方法
 
-* python create_road_graph_data.pyを実行することで，道路網グラフデータが作成される
-* 入力データは，inputフォルダに置いてあるが，ファイル名はreate_road_graph_data.pyで指定する必要がある
+以下の2つを実行する
+```
+python create_intersections.py
+python create_graph.py
+```
+* 入力データは，inputフォルダに置いてあるが，ファイルcreate_intersections.pyで指定する必要がある
 * 出力データは，outputに出力される（ノードとエッジのテキストファイル）
 
 ## サンプルデータ
@@ -42,9 +46,11 @@
 
 ## ファイルに関する説明
 
-create_road_graph_data.py : 道路網グラフデータを作成する主プログラム
-./input : 入力となる道路網データ（KML）を置くフォルダ
-./output : 出力となる道路網グラフデータを置くフォルダ
-./temp : 中間結果を置くフォルダ
-test_niigata-gis-graph.py: 単体試験に使用
-research_road_file.py: 入力ファイル（KML）の調査に使用
+* create_intersections.py : 交点の計算を行い，交点ファイル（中間生成物）を出力するプログラム（簡易空間インデックスによる方法）
+* create_intersections_naive.py : 交点の計算を行い，交点ファイル（中間生成物）を出力するプログラム（素朴に2重ループする方法）
+* create_graph.py : 交点ファイルからグラフデータを作成するプログラム
+* ./input : 入力となる道路網データ（KML）を置くフォルダ
+* ./output : 出力となる道路網グラフデータを置くフォルダ
+* ./temp : 中間結果を置くフォルダ
+* test_niigata-gis-graph.py: 単体試験に使用
+* research_road_file.py: 入力ファイル（KML）の調査に使用
