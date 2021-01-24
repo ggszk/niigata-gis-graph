@@ -6,9 +6,11 @@ import datetime
 import json
 
 #
-# 道ファイルを作成する 
+# 道路ファイルを作成する 
 # 1行が道を表す：座標の並び（coordinatesタグの中身そのまま）
-# 
+# in_files : KML形式のファイル名のリスト
+# out_file : 道路ファイル
+#
 def create_roads_file(in_files, out_file) :
     with open(out_file, "w") as o_f:
         for in_file in in_files:
@@ -144,19 +146,144 @@ def get_intersections(file, out_file) :
 
     print(datetime.datetime.now())
 
+# 緯度・経路の範囲を求める
+# file 道路ファイル名
+# n 縦（横）を分割する個数→n*nのメッシュができる
+# 出力：緯度の最小最大の組み，経度の最小最大の組み，緯度経度のセルサイズの組み，n（入力そのまま）
+def get_region(file, n) :
+    min_x = 200
+    max_x = 0
+    min_y = 200
+    max_y = 0
+    w = 0   # セルの横幅
+    h = 0   # セルの縦幅
+
+    roads = read_roads(file)
+    for r in roads:
+        for p in r:
+            if p[0] < min_x :
+                min_x = p[0]
+            if p[0] > max_x :
+                max_x = p[0]
+            if p[1] < min_y :
+                min_y = p[1]
+            if p[1] > max_y :
+                max_y = p[1]
+    w = (max_x - min_x)/n
+    h = (max_y - min_y)/n
+
+    return [(min_x, max_x), (min_y, max_y), (w, h), n]
+
+# 点の含まれるセルを求める
+# 入力：p→点，regiron→get_regionの出力
+# 出力：セルのインデックス（整数の組み）
+def get_cell_by_point(p, region) :
+    # 原点の座標は，(min_x, min_y)
+    origin = (region[0][0], region[1][0])
+    
+    w = region[2][0]
+    h = region[2][1]
+    n = region[3]
+
+    result_x = int((p[0] - origin[0])//w)
+    result_y = int((p[1]-origin[1])//h)
+    # 座標が最大値に一致する場合は，セルを-1する必要あり（indexがnに等しくなってしまう）
+    if result_x == n :
+        result_x = n - 1 
+    if result_y == n :
+        result_y = n - 1 
+    return (result_x, result_y)
+
+# 線分と交わる領域を求める
+# 簡易的に線分が含まれる長方形とする
+# 入力：s→線分，regiron→get_regionの出力
+# 出力：左端と右端のセルの組み
+def get_cells_by_segment(s, region) :
+    # sの端点を，x座標の順に並べ直す
+    if s[0][0] > s[1][0] :
+        s = (s[1], s[0])
+
+    # 端点が含まれるセルを求める
+    cell0 = get_cell_by_point(s[0], region)
+    cell1 = get_cell_by_point(s[1], region)
+
+    return (cell0, cell1)
+
+# 簡易空間インデックスの作成
+# file 道路ファイル名
+# out_file 作成されるインデックスファイル名
+# region 点の存在する範囲（get_regionの出力）
+# 出力：インデックスファイル→セルインデックス，（線分とその線分を含む道路のIDの組み）のリスト
+def create_index(file, out_file, region) :
+    # 道路ファイルを読む
+    roads = read_roads(file)
+
+    # 縦（横）を分割する個数
+    n = region[3]
+
+    # インデックスを空のリストで初期化
+    index = []
+    for i in range(n) :
+        row = []
+        for j in range(n):
+            row.append([])
+        index.append(row)
+
+    r_no = 0 # 道路の番号
+    for r in roads:
+        i = 0 # 点の番号
+        for p in r:
+            if i == len(r) - 1 :
+                break
+            s = (r[i], r[i+1])
+            # 線分の端点のセルを求める
+            cells = get_cells_by_segment(s, region)
+            # 端点を含む長方形に含まれるセルをインデックスに追加する
+            min_x = min(cells[0][0], cells[1][0])
+            max_x = max(cells[0][0], cells[1][0])
+            min_y = min(cells[0][1], cells[1][1])
+            max_y = max(cells[0][1], cells[1][1])
+
+            for cell_x in range(min_x, max_x+1) :
+                for cell_y in range(min_y, max_y+1) :
+                    index[cell_x][cell_y].append((s, r_no))
+            i = i + 1
+        r_no = r_no + 1
+    return index
+
+# インデックスをファイル出力
+def print_index(index) :
+    # 1行あたりの線分数の最大を調べる
+    max_seg = 0
+    for col in index :
+        for cell in col :
+            if len(cell) > max_seg :
+                max_seg = len(cell)
+#            print(len(cell))
+            print(cell)
+    print(max_seg)
+
 # ここからデータの作成
 
 # 入力となるKMLファイル
 kml_files = ["./input/od_gis_10121_kokudo.kml", "./input/od_gis_10122_kendo.kml", "./input/od_gis_10123_shido.kml"]
 
 # 中間生成ファイルの置き場
-temp_dir = "./result_temp/"
+temp_dir = "./temp/"
 
-# 道データの作成
-create_roads_file(kml_files, temp_dir + "roads.txt")
+# 道路ファイルの作成
+#create_roads_file(kml_files, temp_dir + "roads.txt")
 
 # 重複する点の排除：一つの道で同じ座標が2つ連続して出てくるとき、その重複を削除する
-remove_duplicate_points(temp_dir + "roads.txt", temp_dir + "roads2.txt")
+#remove_duplicate_points(temp_dir + "roads.txt", temp_dir + "roads2.txt")
 
 # 道路ファイルから交点ファイルを作る
-get_intersections(temp_dir + "roads2.txt", temp_dir + "intersections.txt")
+#get_intersections(temp_dir + "roads2.txt", temp_dir + "intersections.txt")
+
+region = get_region(temp_dir + "roads2.txt", 200)
+#cell = get_cell_by_point((138.93704620065282,37.748195127472428), region)
+#cells = get_cells_by_segment(((138.93704620065282,37.748195127472428), (138.93698747041839,37.748280945133466)), region)
+#print(cells)
+#print(region)
+index = create_index(temp_dir + "roads2.txt", "", region)
+print_index(index)
