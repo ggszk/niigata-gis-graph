@@ -106,7 +106,7 @@ initial_node_id = 206623
 initial_edge_id = 187767
 
 # 中間生成ファイルの置き場
-temp_dir = "./result_temp/"
+temp_dir = "./temp/"
 
 # 最終ファイルの置き場
 out_dir = "./output/"

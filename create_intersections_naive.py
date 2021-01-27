@@ -150,7 +150,7 @@ def get_intersections(file, out_file) :
 kml_files = ["./input/od_gis_10121_kokudo.kml", "./input/od_gis_10122_kendo.kml", "./input/od_gis_10123_shido.kml"]
 
 # 中間生成ファイルの置き場
-temp_dir = "./result_temp/"
+temp_dir = "./temp/"
 
 # 道データの作成
 create_roads_file(kml_files, temp_dir + "roads.txt")
