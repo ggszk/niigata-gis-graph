@@ -1,4 +1,4 @@
-import count_road
+import common
 
 # 道のサンプル
 # 県道
@@ -22,11 +22,11 @@ r2 = [
     (139.06780359976915,37.897175260573896)
 ]
 
-l1 = count_road.get_line(r1[0], r1[1])
-l2 = count_road.get_line(r2[0], r2[1])
+l1 = common.get_line(r1[0], r1[1])
+l2 = common.get_line(r2[0], r2[1])
 print(l1)
 print(l2)
-print(count_road.get_intersection(l1, l2))
+print(common.get_intersection(l1, l2))
 
 #s0 = (r1[1], r1[2])
 #s1 = (r2[0], r2[1])
